@@ -1,0 +1,20 @@
+{
+  "name": "syafari",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "server": "nodemon index.js"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "vite": "^5.4.21"
+  }
+}

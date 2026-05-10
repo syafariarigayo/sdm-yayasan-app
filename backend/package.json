@@ -1,0 +1,33 @@
+{
+  "name": "syafari",
+  "version": "1.0.0",
+  "description": "Proyek React + Vite + Express + Nodemon",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "start": "node index.js",
+    "server": "nodemon index.js",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.1.0",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.9.4",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "vite": "^7.1.12"
+  }
+}

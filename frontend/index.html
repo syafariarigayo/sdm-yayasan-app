@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data SDM Yayasan - Auto Login</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; background: #f5f7fa; }
+h1 { text-align: center; color: #333; }
+form { background: white; padding: 15px; border-radius: 8px; margin-top: 20px; }
+input, select, textarea { width: 100%; padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; }
+button { background: #0078d7; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+button:hover { background: #005fa3; }
+table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; border-radius: 8px; overflow: hidden; }
+th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+th { background: #0078d7; color: white; }
+.pdf-link { color: #0078d7; text-decoration: none; }
+#message { margin-top: 10px; padding: 10px; border-radius: 5px; display: none; }
+#message.success { background: #d4edda; color: #155724; }
+#message.error { background: #f8d7da; color: #721c24; }
+</style>
+</head>
+<body>
+<h1>📋 Data SDM Yayasan</h1>
+
+<div id="message"></div>
+
+<!-- SDM FORM -->
+<form id="sdmForm">
+  <h3>Tambah / Edit Data SDM</h3>
+  <input type="hidden" id="id">
+  <label>Nama:</label><input type="text" id="nama" required>
+  <label>Jabatan:</label><input type="text" id="jabatan">
+  <label>NIP:</label><input type="text" id="nip">
+  <label>Jenis Kelamin:</label>
+  <select id="jenis_kelamin"><option value="Laki-laki">Laki-laki</option><option value="Perempuan">Perempuan</option></select>
+  <label>Tanggal Lahir:</label><input type="date" id="tanggal_lahir">
+  <label>Alamat:</label><textarea id="alamat"></textarea>
+  <label>No. HP:</label><input type="text" id="no_hp">
+  <label>Email:</label><input type="email" id="email">
+  <label>Unit:</label>
+  <select id="unit_id">
+    <option value="1">Yayasan</option>
+    <option value="2">SMP</option>
+    <option value="3">SD</option>
+    <option value="4">TK</option>
+  </select>
+  <button type="submit">💾 Simpan Data</button>
+</form>
+
+<!-- PDF FORM -->
+<form id="pdfForm">
+  <h3>Upload / Ganti PDF</h3>
+  <input type="hidden" id="pdf_id">
+  <input type="file" id="file_pdf" accept="application/pdf">
+  <button type="submit">📄 Upload PDF</button>
+</form>
+
+<h3>Daftar SDM</h3>
+<table id="sdmTable">
+<thead>
+<tr>
+  <th>ID</th><th>Nama</th><th>Jabatan</th><th>Unit</th><th>Email</th><th>PDF</th><th>Aksi</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script>
+const apiUrl = "http://localhost:3000/sdm";
+const sdmForm = document.getElementById('sdmForm');
+const pdfForm = document.getElementById('pdfForm');
+const message = document.getElementById('message');
+
+function showMessage(text, type='success'){
+  message.textContent = text;
+  message.className = type==='success' ? 'success' : 'error';
+  message.style.display = 'block';
+  setTimeout(()=>message.style.display='none', 3000);
+}
+
+// Sembunyikan form sementara
+sdmForm.style.display = 'none';
+pdfForm.style.display = 'none';
+document.getElementById('sdmTable').style.display = 'none';
+
+// -------- AUTO LOGIN ADMIN -----------
+async function autoLogin(){
+  try {
+    const res = await fetch('http://localhost:3000/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'admin', password: '12345' })
+    });
+    const result = await res.json();
+    if(result.success){
+      showMessage('Login otomatis berhasil!');
+      sdmForm.style.display = 'block';
+      pdfForm.style.display = 'block';
+      document.getElementById('sdmTable').style.display = 'table';
+      loadData();
+    } else showMessage('Login otomatis gagal', 'error');
+  } catch(e){
+    showMessage('Backend tidak merespon', 'error');
+  }
+}
+
+// -------- LOAD SDM -----------
+async function loadData(){
+  const res = await fetch(apiUrl);
+  const data = await res.json();
+  const tbody = document.querySelector("#sdmTable tbody");
+  tbody.innerHTML = "";
+  data.forEach(sdm => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${sdm.id}</td>
+      <td>${sdm.nama}</td>
+      <td>${sdm.jabatan||'-'}</td>
+      <td>${sdm.nama_unit||'-'}</td>
+      <td>${sdm.email||'-'}</td>
+      <td>${sdm.file_pdf ? `<a class="pdf-link" href="http://localhost:3000/uploads/${sdm.file_pdf}" target="_blank">📄 Preview</a>` : '-'}</td>
+      <td>
+        <button onclick="editData(${sdm.id})">✏️ Edit</button>
+        <button onclick="hapusData(${sdm.id})">🗑️ Hapus</button>
+        <button onclick="setPdfId(${sdm.id})">📄 Edit PDF</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// HAPUS SDM
+async function hapusData(id){
+  if(!confirm("Yakin hapus data ini?")) return;
+  await fetch(`${apiUrl}/${id}`, { method: "DELETE" });
+  showMessage('Data berhasil dihapus!');
+  loadData();
+}
+
+// SET PDF ID
+function setPdfId(id){ document.getElementById('pdf_id').value = id; }
+
+// EDIT DATA
+async function editData(id){
+  const res = await fetch(apiUrl);
+  const data = await res.json();
+  const sdm = data.find(item=>item.id===id);
+  if(!sdm) return showMessage("Data tidak ditemukan!", 'error');
+  document.getElementById("id").value = sdm.id;
+  document.getElementById("nama").value = sdm.nama;
+  document.getElementById("jabatan").value = sdm.jabatan||'';
+  document.getElementById("nip").value = sdm.nip||'';
+  document.getElementById("jenis_kelamin").value = sdm.jenis_kelamin||'Laki-laki';
+  document.getElementById("tanggal_lahir").value = sdm.tanggal_lahir||'';
+  document.getElementById("alamat").value = sdm.alamat||'';
+  document.getElementById("no_hp").value = sdm.no_hp||'';
+  document.getElementById("email").value = sdm.email||'';
+  document.getElementById("unit_id").value = sdm.unit_id||1;
+}
+
+// SIMPAN DATA SDM
+sdmForm.addEventListener("submit", async e=>{
+  e.preventDefault();
+  const id = document.getElementById("id").value;
+  const formData = new FormData(sdmForm);
+  if(id){
+    await fetch(`${apiUrl}/${id}`, { method: "PUT", body: formData });
+    showMessage('Data berhasil diperbarui!');
+  } else {
+    await fetch(apiUrl, { method: "POST", body: formData });
+    showMessage('Data berhasil ditambahkan!');
+  }
+  sdmForm.reset(); document.getElementById("id").value = '';
+  loadData();
+});
+
+// UPLOAD PDF
+pdfForm.addEventListener("submit", async e=>{
+  e.preventDefault();
+  const id = document.getElementById('pdf_id').value;
+  const fileInput = document.getElementById('file_pdf');
+  if(!id) return showMessage("Pilih data SDM untuk upload PDF", 'error');
+  if(fileInput.files.length===0) return showMessage("Pilih file PDF", 'error');
+  const formData = new FormData(); formData.append('file_pdf', fileInput.files[0]);
+  await fetch(`${apiUrl}/${id}`, { method: "PUT", body: formData });
+  showMessage('PDF berhasil diupload!');
+  pdfForm.reset(); document.getElementById('pdf_id').value = '';
+  loadData();
+});
+
+// Jalankan auto-login saat halaman terbuka
+autoLogin();
+</script>
+</body>
+</html>

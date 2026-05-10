@@ -1,0 +1,6 @@
+@echo off
+echo Menjalankan server Express...
+start cmd /k "node index.js"
+timeout /t 2
+echo Membuka browser...
+start "" "http://localhost:3000/index.html"

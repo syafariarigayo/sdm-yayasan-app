@@ -1,0 +1,106 @@
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const bodyParser = require('body-parser');
+const multer = require('multer');
+
+const app = express();
+const PORT = 3000;
+
+// ===== MIDDLEWARE =====
+app.use(cors());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// folder static untuk front-end dan file PDF
+app.use(express.static(path.join(__dirname)));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ===== FILE DATA =====
+const sdmFile = 'sdm.json';
+const usersFile = 'users.json';
+
+// ===== MULTER =====
+const upload = multer({ dest: 'uploads/' });
+
+// ===== MAPPING UNIT =====
+const unitMap = { "1": "Yayasan", "2": "SMP", "3": "SD", "4": "TK" };
+
+// ===== LOGIN =====
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if(!fs.existsSync(usersFile)){
+    fs.writeFileSync(usersFile, JSON.stringify([{ username: 'admin', password: '12345' }], null, 2));
+  }
+
+  const users = JSON.parse(fs.readFileSync(usersFile, 'utf-8'));
+  const user = users.find(u => u.username === username && u.password === password);
+  if(user) res.json({ success:true, message:'Login berhasil' });
+  else res.json({ success:false, message:'Username atau password salah' });
+});
+
+// fallback GET login
+app.get('/login', (req,res)=> res.send('Endpoint login hanya bisa diakses via POST.'));
+
+// ===== CRUD SDM =====
+
+// GET semua SDM
+app.get('/sdm', (req,res)=>{
+  if(!fs.existsSync(sdmFile)) fs.writeFileSync(sdmFile, '[]');
+  const sdm = JSON.parse(fs.readFileSync(sdmFile,'utf-8'));
+  const dataWithUnit = sdm.map(item => ({ ...item, nama_unit: unitMap[item.unit_id] || "-" }));
+  res.json(dataWithUnit);
+});
+
+// POST tambah SDM
+app.post('/sdm', upload.single('file_pdf'), (req,res)=>{
+  const sdm = JSON.parse(fs.readFileSync(sdmFile,'utf-8'));
+  const newData = { id: sdm.length + 1, ...req.body, file_pdf: req.file ? req.file.filename : null };
+  sdm.push(newData);
+  fs.writeFileSync(sdmFile, JSON.stringify(sdm,null,2));
+  res.json(newData);
+});
+
+// PUT edit SDM
+app.put('/sdm/:id', upload.single('file_pdf'), (req,res)=>{
+  const sdm = JSON.parse(fs.readFileSync(sdmFile,'utf-8'));
+  const id = parseInt(req.params.id);
+  const index = sdm.findIndex(item => item.id === id);
+  if(index === -1) return res.status(404).json({message:'Data tidak ditemukan'});
+
+  if(req.file && sdm[index].file_pdf){
+    const oldFile = path.join(__dirname,'uploads',sdm[index].file_pdf);
+    if(fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+  }
+
+  sdm[index] = { id, ...req.body, file_pdf: req.file ? req.file.filename : sdm[index].file_pdf };
+  fs.writeFileSync(sdmFile, JSON.stringify(sdm,null,2));
+  res.json(sdm[index]);
+});
+
+// DELETE SDM
+app.delete('/sdm/:id', (req,res)=>{
+  const sdm = JSON.parse(fs.readFileSync(sdmFile,'utf-8'));
+  const id = parseInt(req.params.id);
+  const index = sdm.findIndex(item => item.id === id);
+  if(index === -1) return res.status(404).json({message:'Data tidak ditemukan'});
+
+  if(sdm[index].file_pdf){
+    const filePath = path.join(__dirname,'uploads',sdm[index].file_pdf);
+    if(fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  }
+
+  const deleted = sdm.splice(index,1);
+  fs.writeFileSync(sdmFile, JSON.stringify(sdm,null,2));
+  res.json(deleted[0]);
+});
+
+// ===== FALLBACK UNTUK FRONT-END =====
+app.get('/', (req,res)=>{
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ===== START SERVER =====
+app.listen(PORT, ()=> console.log(`Server berjalan di http://localhost:${PORT}`));
