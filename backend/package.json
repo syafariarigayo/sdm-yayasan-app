@@ -1,33 +1,22 @@
 {
-  "name": "syafari",
-  "version": "1.0.0",
-  "description": "Proyek React + Vite + Express + Nodemon",
-  "main": "index.js",
+  "name": "sdm-yayasan-backend",
+  "version": "2.0.0",
+  "description": "Backend SDM Yayasan - Express + MySQL + JWT",
+  "main": "server.js",
   "scripts": {
-    "dev": "vite",
-    "start": "node index.js",
-    "server": "nodemon index.js",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@vitejs/plugin-react": "^5.1.0",
-    "body-parser": "^2.2.0",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "ejs": "^3.1.10",
+    "dotenv": "^16.0.3",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.0",
     "multer": "^2.0.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^7.9.4",
-    "sqlite3": "^5.1.7"
+    "mysql2": "^3.6.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10",
-    "vite": "^7.1.12"
+    "nodemon": "^3.1.10"
   }
 }
